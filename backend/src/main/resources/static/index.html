@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CricPulse - Real-Time Cricket Score Management Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <span class="brand-icon">🏏</span>
+                <div class="brand-text">
+                    <span class="brand-title">CricPulse<span class="brand-pro">PRO</span></span>
+                    <span class="brand-subtitle">Real-Time Cricket Intelligence &amp; Score Management</span>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="sync-status" id="syncStatus">
+                    <span class="pulse-dot"></span>
+                    <span id="syncText">Live Sync Active</span>
+                </div>
+                <div class="server-time" id="serverClock">--:--:--</div>
+                <button class="btn btn-outline-sm" id="btnRefresh" title="Force Refresh">🔄 Refresh</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Match Ticker / Switcher Strip -->
+    <section class="ticker-strip">
+        <div class="ticker-container">
+            <div class="ticker-filter-group">
+                <button class="filter-pill active" data-filter="ALL">All Matches</button>
+                <button class="filter-pill" data-filter="LIVE">🔴 Live</button>
+                <button class="filter-pill" data-filter="UPCOMING">⏳ Upcoming</button>
+                <button class="filter-pill" data-filter="COMPLETED">✅ Completed</button>
+            </div>
+            <div class="ticker-cards" id="matchesTicker">
+                <!-- Dynamically populated match cards -->
+                <div class="card-skeleton">Loading matches...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Live Container -->
+    <main class="main-content">
+        <!-- Live Match Hero Scoreboard -->
+        <section class="hero-scoreboard" id="heroScoreboard">
+            <div class="hero-header">
+                <div class="match-meta">
+                    <span class="badge badge-live" id="matchStatusBadge">LIVE</span>
+                    <span class="series-name" id="heroSeries">ICC Men's T20 World Cup 2026</span>
+                    <span class="venue-info" id="heroVenue">Wankhede Stadium, Mumbai</span>
+                </div>
+                <div class="match-title-row">
+                    <h1 id="heroTitle">India vs Australia - Semi Final 1</h1>
+                    <span class="match-type-tag" id="heroType">T20 • 20 Overs</span>
+                </div>
+                <div class="toss-info" id="heroToss">Toss: India won the toss and elected to bat first</div>
+            </div>
+
+            <!-- Big Live Score Bar -->
+            <div class="score-display-card">
+                <div class="score-main">
+                    <div class="team-block" id="battingTeamBlock">
+                        <div class="team-flag" id="battingFlag">🇦🇺</div>
+                        <div class="team-info">
+                            <span class="team-name" id="battingName">Australia</span>
+                            <span class="team-sub">Batting (Innings 2)</span>
+                        </div>
+                    </div>
+                    <div class="score-digits">
+                        <div class="primary-score">
+                            <span class="runs-wickets" id="mainScoreDigits">154/3</span>
+                            <span class="overs-indicator" id="mainOvers">(16.2 ov)</span>
+                        </div>
+                        <div class="rates-row">
+                            <span class="rate-item">CRR: <strong id="crrValue">9.42</strong></span>
+                            <span class="rate-item highlight" id="rrrBlock">RRR: <strong id="rrrValue">10.63</strong></span>
+                            <span class="rate-item" id="targetBlock">Target: <strong id="targetValue">193</strong></span>
+                        </div>
+                    </div>
+                    <div class="team-block bowling" id="bowlingTeamBlock">
+                        <div class="team-info text-right">
+                            <span class="team-name" id="bowlingName">India</span>
+                            <span class="team-sub">Bowling</span>
+                        </div>
+                        <div class="team-flag" id="bowlingFlag">🇮🇳</div>
+                    </div>
+                </div>
+
+                <!-- Equation Banner -->
+                <div class="equation-banner" id="equationBanner">
+                    <span id="equationText">Australia need 39 runs in 22 balls to reach the final</span>
+                </div>
+
+                <!-- Previous Innings Ribbon -->
+                <div class="innings-ribbon">
+                    <div class="ribbon-item">
+                        <span class="ribbon-label">1st Innings:</span>
+                        <span class="ribbon-val" id="firstInnSummary">IND 192/5 (20.0 ov)</span>
+                    </div>
+                    <div class="ribbon-item" id="secondInnSummaryWrapper">
+                        <span class="ribbon-label">Current:</span>
+                        <span class="ribbon-val" id="secondInnSummary">AUS 154/3 (16.2 ov)</span>
+                    </div>
+                </div>
+
+                <!-- Current Action Matrix (Batters, Bowler, Over Balls) -->
+                <div class="action-matrix">
+                    <!-- Batters Column -->
+                    <div class="matrix-card batters-card">
+                        <div class="matrix-title">BATSMEN ON CREASE</div>
+                        <div class="batter-row striker" id="strikerRow">
+                            <div class="player-name-cell">
+                                <span class="bat-icon">🏏</span>
+                                <span class="p-name" id="strikerName">Glenn Maxwell</span>
+                                <span class="badge-tag">STRIKER</span>
+                            </div>
+                            <div class="player-stats-cell">
+                                <span class="runs-highlight" id="strikerRuns">32*</span>
+                                <span class="balls-sub" id="strikerBalls">(18)</span>
+                                <span class="boundary-sub" id="strikerBoundaries">4s: 2 | 6s: 2</span>
+                                <span class="sr-sub" id="strikerSR">SR: 177.7</span>
+                            </div>
+                        </div>
+                        <div class="batter-row non-striker" id="nonStrikerRow">
+                            <div class="player-name-cell">
+                                <span class="dot-icon">•</span>
+                                <span class="p-name" id="nonStrikerName">Marcus Stoinis</span>
+                            </div>
+                            <div class="player-stats-cell">
+                                <span class="runs-highlight" id="nonStrikerRuns">8*</span>
+                                <span class="balls-sub" id="nonStrikerBalls">(6)</span>
+                                <span class="boundary-sub" id="nonStrikerBoundaries">4s: 1 | 6s: 0</span>
+                                <span class="sr-sub" id="nonStrikerSR">SR: 133.3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bowler Column -->
+                    <div class="matrix-card bowler-card">
+                        <div class="matrix-title">CURRENT BOWLER</div>
+                        <div class="bowler-profile">
+                            <div class="bowler-name-row">
+                                <span class="ball-icon">⚾</span>
+                                <span class="b-name" id="bowlerName">Jasprit Bumrah</span>
+                                <span class="badge-tag bow-tag">BOWLING</span>
+                            </div>
+                            <div class="bowler-grid">
+                                <div class="b-stat">
+                                    <span class="lbl">OVERS</span>
+                                    <span class="val" id="bowlerOvers">3.2</span>
+                                </div>
+                                <div class="b-stat">
+                                    <span class="lbl">MAIDENS</span>
+                                    <span class="val" id="bowlerMaidens">0</span>
+                                </div>
+                                <div class="b-stat">
+                                    <span class="lbl">RUNS</span>
+                                    <span class="val" id="bowlerRuns">22</span>
+                                </div>
+                                <div class="b-stat">
+                                    <span class="lbl">WICKETS</span>
+                                    <span class="val highlight-w" id="bowlerWickets">1</span>
+                                </div>
+                                <div class="b-stat">
+                                    <span class="lbl">ECONOMY</span>
+                                    <span class="val" id="bowlerEcon">6.60</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Over Pills -->
+                    <div class="matrix-card over-balls-card">
+                        <div class="matrix-title">THIS OVER DELIVERIES</div>
+                        <div class="pills-container" id="currentOverPills">
+                            <span class="ball-pill ball-single">1</span>
+                            <span class="ball-pill ball-single">1</span>
+                        </div>
+                        <div class="over-summary-hint">
+                            <small>Real-time delivery ribbon updates automatically</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Tabs Section -->
+        <section class="details-section">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="tabCommentary">🎙️ Live Commentary</button>
+                <button class="tab-btn" data-tab="tabScorecard">📋 Detailed Scorecard</button>
+                <button class="tab-btn" data-tab="tabAnalytics">📊 Match Analytics</button>
+                <button class="tab-btn" data-tab="tabLeaderboard">🏆 Tournament Leaderboard</button>
+                <button class="tab-btn accent-tab" data-tab="tabSimulation">🎮 Live Simulator &amp; Scorer Console</button>
+            </div>
+
+            <!-- Tab 1: Live Commentary -->
+            <div class="tab-pane active" id="tabCommentary">
+                <div class="pane-subbar">
+                    <span class="pane-title">Ball-by-Ball Live Broadcast Feed</span>
+                    <div class="filter-btn-group">
+                        <button class="btn-filter active" data-filter="ALL">All Balls</button>
+                        <button class="btn-filter" data-filter="BOUNDARIES">⚡ Boundaries (4s &amp; 6s)</button>
+                        <button class="btn-filter" data-filter="WICKETS">🔴 Wickets</button>
+                    </div>
+                </div>
+                <div class="commentary-list" id="commentaryFeed">
+                    <!-- Dynamic ball commentary items -->
+                    <div class="card-skeleton">Loading live commentary...</div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Detailed Scorecard -->
+            <div class="tab-pane" id="tabScorecard">
+                <div class="scorecard-wrapper" id="scorecardContainer">
+                    <div class="card-skeleton">Loading full match scorecard...</div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Match Analytics -->
+            <div class="tab-pane" id="tabAnalytics">
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Match Comparison &amp; Run Rate Analysis</h3>
+                        <div class="stat-compare-table">
+                            <div class="compare-row header">
+                                <span>Metric</span>
+                                <span id="anaTeamA">India</span>
+                                <span id="anaTeamB">Australia</span>
+                            </div>
+                            <div class="compare-row">
+                                <span>Total Runs</span>
+                                <span id="anaRunsA">192/5</span>
+                                <span id="anaRunsB">154/3</span>
+                            </div>
+                            <div class="compare-row">
+                                <span>Overs Bowled</span>
+                                <span id="anaOversA">20.0</span>
+                                <span id="anaOversB">16.2</span>
+                            </div>
+                            <div class="compare-row">
+                                <span>Run Rate</span>
+                                <span id="anaRRA">9.60</span>
+                                <span id="anaRRB">9.42</span>
+                            </div>
+                            <div class="compare-row">
+                                <span>Extras</span>
+                                <span id="anaExtrasA">10</span>
+                                <span id="anaExtrasB">7</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Partnership &amp; Key Milestones</h3>
+                        <div id="analyticsPartnership" class="partnership-box">
+                            <div class="p-pair">
+                                <strong>Active 4th Wicket Partnership:</strong>
+                                <span>Glenn Maxwell &amp; Marcus Stoinis</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-fill" style="width: 72%;"></div>
+                            </div>
+                            <small>46 runs off 28 balls (Current Stand)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Tournament Leaderboards -->
+            <div class="tab-pane" id="tabLeaderboard">
+                <div class="leaderboard-grid">
+                    <!-- Orange Cap (Top Run Scorers) -->
+                    <div class="cap-card orange-cap">
+                        <div class="cap-header">
+                            <span class="cap-icon">🧢</span>
+                            <div>
+                                <h3>Orange Cap Leaderboard</h3>
+                                <small>Most Runs Scored in Tournament</small>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="cap-table" id="tableOrangeCap">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Player</th>
+                                        <th>Team</th>
+                                        <th>Runs</th>
+                                        <th>Avg</th>
+                                        <th>SR</th>
+                                        <th>HS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7">Loading Orange Cap statistics...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Purple Cap (Top Wicket Takers) -->
+                    <div class="cap-card purple-cap">
+                        <div class="cap-header">
+                            <span class="cap-icon">🟣</span>
+                            <div>
+                                <h3>Purple Cap Leaderboard</h3>
+                                <small>Most Wickets Taken in Tournament</small>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="cap-table" id="tablePurpleCap">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Bowler</th>
+                                        <th>Team</th>
+                                        <th>Wickets</th>
+                                        <th>Econ</th>
+                                        <th>Avg</th>
+                                        <th>BBI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7">Loading Purple Cap statistics...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Simulation & Manual Scorer Console -->
+            <div class="tab-pane" id="tabSimulation">
+                <div class="console-grid">
+                    <!-- Simulator Engine Panel -->
+                    <div class="console-panel">
+                        <div class="panel-header">
+                            <h3>🤖 Automated Match Simulation Engine</h3>
+                            <span class="sim-badge" id="simActiveBadge">INACTIVE</span>
+                        </div>
+                        <p class="panel-desc">
+                            Simulate real-time live cricket action ball-by-ball. The engine computes realistic delivery outcomes (dots, singles, boundaries, wickets, extras, dismissals, strike changes) and broadcasts live updates to all clients!
+                        </p>
+                        <div class="sim-controls">
+                            <button class="btn btn-success" id="btnStartSim">▶ Start Live Simulation</button>
+                            <button class="btn btn-warning" id="btnPauseSim">⏸ Pause Simulation</button>
+                            <button class="btn btn-primary" id="btnStepSim">⏭ Step 1 Ball</button>
+                            <button class="btn btn-danger" id="btnResetSim">🔄 Reset Match (0.0 ov)</button>
+                        </div>
+                        <div class="sim-speed-box">
+                            <label>Delivery Interval Speed:</label>
+                            <div class="speed-btns">
+                                <button class="btn-speed" data-speed="1000">⚡ 1.0 sec (Fast)</button>
+                                <button class="btn-speed active" data-speed="2000">⏱ 2.0 sec (Default)</button>
+                                <button class="btn-speed" data-speed="3500">🐢 3.5 sec (Relaxed)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Scorer Panel (Umpire / Official Scorer Mode) -->
+                    <div class="console-panel">
+                        <div class="panel-header">
+                            <h3>📝 Manual Scorer &amp; Event Injector</h3>
+                            <span class="badge badge-sub">OFFICIAL SCORER MODE</span>
+                        </div>
+                        <p class="panel-desc">
+                            Directly record custom ball events, runs, dismissals, or extras for official scoring accuracy.
+                        </p>
+
+                        <!-- Quick Run Buttons -->
+                        <div class="scoring-field">
+                            <label>Batsman Runs Off Bat:</label>
+                            <div class="runs-btn-grid" id="runsBtnGrid">
+                                <button class="btn-run" data-runs="0">0 (Dot)</button>
+                                <button class="btn-run" data-runs="1">1 Run</button>
+                                <button class="btn-run" data-runs="2">2 Runs</button>
+                                <button class="btn-run" data-runs="3">3 Runs</button>
+                                <button class="btn-run boundary" data-runs="4">4 (FOUR)</button>
+                                <button class="btn-run maximum" data-runs="6">6 (SIX)</button>
+                            </div>
+                        </div>
+
+                        <!-- Special Event Radio / Checkbox -->
+                        <div class="scoring-row">
+                            <div class="scoring-col">
+                                <label><input type="checkbox" id="chkIsWicket"> 🔴 Fall of Wicket</label>
+                                <select id="selWicketType" class="form-select" disabled>
+                                    <option value="CAUGHT">Caught</option>
+                                    <option value="BOWLED">Bowled</option>
+                                    <option value="LBW">LBW</option>
+                                    <option value="RUN_OUT">Run Out</option>
+                                    <option value="STUMPED">Stumped</option>
+                                </select>
+                            </div>
+                            <div class="scoring-col">
+                                <label><input type="checkbox" id="chkIsExtra"> 🟡 Extra Delivery</label>
+                                <select id="selExtraType" class="form-select" disabled>
+                                    <option value="WIDE">Wide</option>
+                                    <option value="NO_BALL">No Ball</option>
+                                    <option value="LEG_BYE">Leg Bye</option>
+                                    <option value="BYE">Bye</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom Commentary Input -->
+                        <div class="scoring-field">
+                            <label>Custom Commentary Text (Optional):</label>
+                            <input type="text" id="txtCustomCommentary" class="form-control" placeholder="e.g. Gorgeous straight drive off the middle of the bat!">
+                        </div>
+
+                        <button class="btn btn-record" id="btnSubmitScore">⚡ Record Delivery &amp; Broadcast</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>© 2026 <strong>CricPulse Pro</strong> — Scalable Real-Time Cricket Score Management System</p>
+            <p>Built with Spring Boot 4.x / Java 27 • Hibernate JPA • MySQL 8 • REST APIs • Server-Sent Events (SSE)</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
